@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantai Dasha — Web Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital,wght@0,400;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0d0d0b;
+    --cream: #f0ece2;
+    --warm: #c8a96e;
+    --warm-dim: rgba(200,169,110,0.18);
+    --text-main: rgba(240,236,226,0.9);
+    --text-dim: rgba(240,236,226,0.4);
+    --text-dimmer: rgba(240,236,226,0.22);
+    --split: 52%;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--ink);
+    overflow: hidden;
+    cursor: none;
+  }
+
+  /* ---- CUSTOM CURSOR ---- */
+  #cursor {
+    position: fixed;
+    width: 7px; height: 7px;
+    background: var(--warm);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: width 0.18s ease, height 0.18s ease;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 34px; height: 34px;
+    border: 1px solid rgba(200,169,110,0.45);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+  }
+  #cursor.big { width: 3px; height: 3px; }
+  #cursor-ring.big { width: 48px; height: 48px; }
+
+  /* ---- OUTER WRAPPER ---- */
+  .card {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: var(--split) 1fr;
+    overflow: hidden;
+  }
+
+  /* ---- LEFT — PHOTO PANEL ---- */
+  .photo-panel {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .photo-bg {
+    position: absolute;
+    inset: -4%;
+    background-image: var(--img1);
+    background-size: cover;
+    background-position: center 28%;
+    transition: transform 0.12s ease-out;
+    will-change: transform;
+  }
+
+  .photo-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to right, rgba(13,13,11,0.15) 0%, rgba(13,13,11,0.0) 50%, rgba(13,13,11,0.85) 100%),
+      linear-gradient(to bottom, rgba(13,13,11,0.5) 0%, transparent 30%, transparent 70%, rgba(13,13,11,0.4) 100%);
+  }
+
+  /* grain */
+  .grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 140px;
+    pointer-events: none;
+  }
+
+  /* photo panel top-left label */
+  .photo-label {
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeDown 0.6s 0.2s ease forwards;
+    z-index: 2;
+  }
+  .photo-label-line { width: 22px; height: 1px; background: var(--warm); }
+  .photo-label span {
+    font-family: 'DM Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--warm);
+    font-weight: 300;
+  }
+
+  /* secondary image inset — bottom left of photo panel */
+  .inset-photo {
+    position: absolute;
+    bottom: 28px;
+    left: 28px;
+    width: 160px;
+    height: 105px;
+    overflow: hidden;
+    z-index: 2;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.7s 1.1s ease forwards;
+  }
+  .inset-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 60%;
+    filter: saturate(0.75);
+    transition: filter 0.4s ease, transform 0.5s ease;
+  }
+  .inset-photo:hover img { filter: saturate(1.1); transform: scale(1.05); }
+  .inset-photo::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 7px;
+    right: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 7.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(240,236,226,0.45);
+  }
+  .inset-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(200,169,110,0.2);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ---- RIGHT — EDITORIAL PANEL ---- */
+  .text-panel {
+    position: relative;
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 28px 36px 28px 40px;
+    border-left: 1px solid rgba(200,169,110,0.12);
+    overflow: hidden;
+  }
+
+  /* subtle background texture on right panel */
+  .text-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 80% 20%, rgba(200,169,110,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 80%, rgba(200,169,110,0.03) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* cursor glow on right panel */
+  .cursor-glow {
+    position: absolute;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,169,110,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    transform: translate(-50%,-50%);
+    transition: left 0.12s ease, top 0.12s ease;
+    will-change: left, top;
+    z-index: 0;
+  }
+
+  /* ---- TOP META ROW ---- */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: fadeDown 0.6s 0.35s ease forwards;
+  }
+
+  .meta-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    font-weight: 300;
+    padding: 4px 9px;
+    border: 1px solid rgba(240,236,226,0.1);
+  }
+
+  .meta-coords {
+    font-family: 'DM Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.15em;
+    color: var(--text-dimmer);
+    text-align: right;
+    line-height: 1.7;
+  }
+
+  /* ---- TITLE BLOCK ---- */
+  .title-block {
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: fadeUp 0.8s 0.45s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+
+  .pinyin {
+    font-family: 'DM Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--warm);
+    font-weight: 300;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .title-zh {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(54px, 7.5vw, 88px);
+    line-height: 0.88;
+    color: var(--cream);
+    letter-spacing: 0.015em;
+    display: block;
+  }
+
+  .title-en {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(26px, 3.5vw, 44px);
+    font-style: italic;
+    color: var(--warm);
+    line-height: 1;
+    margin-top: 2px;
+    display: block;
+  }
+
+  .title-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 300;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .title-sub::before {
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 1px;
+    background: rgba(240,236,226,0.25);
+  }
+
+  /* ---- DIVIDER ---- */
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, var(--warm), rgba(200,169,110,0.1) 70%, transparent);
+    opacity: 0;
+    animation: fadeIn 0.5s 0.85s ease forwards;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---- BODY COPY ---- */
+  .body-block {
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(14px);
+    animation: fadeUp 0.8s 0.95s ease forwards;
+  }
+
+  .body-block p {
+    font-family: 'Instrument Serif', serif;
+    font-size: 16.5px;
+    line-height: 1.68;
+    color: var(--text-main);
+    font-style: italic;
+  }
+
+  .body-block p .hl { color: var(--warm); }
+
+  .body-block p + p {
+    margin-top: 10px;
+  }
+
+  /* ---- BOTTOM INFO ROW ---- */
+  .info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeUp 0.7s 1.15s ease forwards;
+  }
+
+  .info-cell {
+    padding: 10px 0;
+    border-top: 1px solid rgba(200,169,110,0.15);
+  }
+  .info-cell + .info-cell { border-left: 1px solid rgba(200,169,110,0.1); padding-left: 16px; }
+
+  .info-cell .info-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 7.5px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--warm);
+    font-weight: 300;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .info-cell .info-value {
+    font-family: 'Instrument Serif', serif;
+    font-size: 13px;
+    color: var(--text-main);
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  /* ---- VERTICAL RULE between panels (decorative) ---- */
+  .panel-rule {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: var(--split);
+    width: 1px;
+    background: linear-gradient(to bottom, transparent 5%, rgba(200,169,110,0.25) 20%, rgba(200,169,110,0.25) 80%, transparent 95%);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* ---- ANIMATIONS ---- */
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeDown { to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* shimmer on hover over title */
+  .title-zh:hover {
+    background: linear-gradient(90deg, var(--cream) 0%, var(--warm) 45%, var(--cream) 80%);
+    background-size: 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 1.6s ease infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<div class="card" id="card">
+
+  <!-- LEFT PHOTO PANEL -->
+  <div class="photo-panel" id="photoPanel">
+    <div class="photo-bg" id="photoBg" style="background-image:url('BWM_2683.jpg')"></div>
+    <div class="photo-overlay"></div>
+    <div class="grain"></div>
+
+    <div class="photo-label">
+      <div class="photo-label-line"></div>
+      <span>Changning District</span>
+    </div>
+
+    <div class="inset-photo" data-label="Barque F&amp;B">
+      <img src="BWM_2679.jpg" alt="Barque restaurant at Fantai" />
+    </div>
+  </div>
+
+  <!-- VERTICAL RULE -->
+  <div class="panel-rule"></div>
+
+  <!-- RIGHT TEXT PANEL -->
+  <div class="text-panel" id="textPanel">
+    <div class="cursor-glow" id="cursorGlow"></div>
+
+    <!-- TOP META -->
+    <div class="meta-row">
+      <div class="meta-tag">Hai Lights &nbsp;/&nbsp; Hidden Gem</div>
+      <div class="meta-coords">
+        31.2140° N, 121.4107° E<br>
+        Lane 1221, West Yan'an Rd
+      </div>
+    </div>
+
+    <!-- TITLE BLOCK -->
+    <div class="title-block">
+      <span class="pinyin">Fān Tài Dà Shà</span>
+      <span class="title-zh">番泰大厦</span>
+      <span class="title-en">Fantai Mansion</span>
+      <span class="title-sub">Changning &nbsp;·&nbsp; Shanghai</span>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="divider"></div>
+
+    <!-- BODY COPY -->
+    <div class="body-block">
+      <p>One of those places you walk past <span class="hl">a hundred times</span> before someone finally grabs you by the arm and says — no, go in there. Tucked inside Lane 1221 on West Yan'an Road, the entrance alone is worth the detour; a fountain built from old car doors sitting in a pocket of greenery, the kind of detail that tells you immediately <span class="hl">this place has a personality.</span></p>
+      <p>Inside: cafes, bistros, a bike shop, tango classes, art studios. Small, a little hidden, <span class="hl">zero influencer energy</span> — for now. The kind of spot that makes you feel like a local just for knowing about it.</p>
+    </div>
+
+    <!-- BOTTOM INFO ROW -->
+    <div class="info-row">
+      <div class="info-cell">
+        <span class="info-label">Hours</span>
+        <span class="info-value">Mon 12:30–20:00<br>Tue–Sun 10:00–20:00</span>
+      </div>
+      <div class="info-cell">
+        <span class="info-label">Address</span>
+        <span class="info-value">Bldg 3, Lane 1221<br>W. Yan'an Rd, Changning</span>
+      </div>
+      <div class="info-cell">
+        <span class="info-label">Vibe</span>
+        <span class="info-value">Art spaces · Cafes<br>Studios · Zero hype</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  const glow = document.getElementById('cursorGlow');
+  const photoBg = document.getElementById('photoBg');
+  const textPanel = document.getElementById('textPanel');
+
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX;
+    my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+
+    // Parallax on photo only
+    const rect = document.getElementById('photoPanel').getBoundingClientRect();
+    const px = (mx - rect.left) / rect.width - 0.5;
+    const py = (my - rect.top) / rect.height - 0.5;
+    photoBg.style.transform = `scale(1.04) translate(${px * 14}px, ${py * 9}px)`;
+
+    // Glow follows cursor inside text panel
+    const tr = textPanel.getBoundingClientRect();
+    if (mx > tr.left) {
+      glow.style.left = (mx - tr.left) + 'px';
+      glow.style.top = (my - tr.top) + 'px';
+      glow.style.opacity = '1';
+    } else {
+      glow.style.opacity = '0';
+    }
+  });
+
+  // Lag ring
+  function animateRing() {
+    rx += (mx - rx) * 0.11;
+    ry += (my - ry) * 0.11;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // Cursor expand on interactive text
+  document.querySelectorAll('p, .title-zh, .title-en, .info-value').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.classList.add('big');
+      ring.classList.add('big');
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.classList.remove('big');
+      ring.classList.remove('big');
+    });
+  });
+</script>
+
+</body>
+</html>
